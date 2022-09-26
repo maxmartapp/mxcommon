@@ -2,7 +2,7 @@ import { ValidationError } from "express-validator";
 import { CustomError } from "./custom-error";
 
 export class RequestValidationError extends CustomError {
-  statusCode: 400;
+  statusCode = 400;
   //   reason = "Not found";
 
   constructor(public errors: ValidationError[]) {
