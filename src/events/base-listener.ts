@@ -8,7 +8,8 @@ interface Event {
 
 export abstract class Listener<T extends Event> {
   abstract subject: T["subject"];
-  //
+  abstract queueGroupName: string;
+  abstract onMessage(data: T["data"], msg: Message): void;
   protected client: Stan;
   protected ackWait = 5 * 1000;
 
@@ -17,8 +18,29 @@ export abstract class Listener<T extends Event> {
   }
 
   // Subscription Options:
+  subscriptionOptions() {
+    return this.client
+      .subscriptionOptions()
+      .setDeliverAllAvailable()
+      .setManualAckMode(true)
+      .setAckWait(this.ackWait)
+      .setDurableName(this.queueGroupName);
+  }
 
   // Listen:
+  listen() {
+    const subscription = this.client.subscribe(
+      this.subject,
+      this.queueGroupName,
+      this.subscriptionOptions()
+    );
+    subscription.on("message", (msg: Message) => {
+      console.log(`Message Recieved: ${this.subject} / ${this.queueGroupName}`);
+
+      const parseData = this.parseMessage(msg);
+      this.onMessage(parseData, msg);
+    });
+  }
 
   // Message Parsing:
   parseMessage(msg: Message) {
